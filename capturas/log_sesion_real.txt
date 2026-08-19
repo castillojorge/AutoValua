@@ -11,7 +11,7 @@ Fecha: 2026-08-19 01:53:45
     },
     "validacion": {
         "vigencia": "2024-05",
-        "mensaje": "Primera vigencia ingerida, no hay comparaci\u00f3n posible.",
+        "mensaje": "Primera vigencia ingerida, no hay comparación posible.",
         "anomalias": [],
         "desaparecidos": []
     }
@@ -62,7 +62,7 @@ Fecha: 2026-08-19 01:53:45
     "anio_valor": "2024",
     "valor": 52300000,
     "vigencia": "2024-06",
-    "nota_legal": "Este valor es informativo. No reemplaza el tr\u00e1mite formal ante el registro correspondiente."
+    "nota_legal": "Este valor es informativo. No reemplaza el trámite formal ante el registro correspondiente."
 }
 
 --- 4) Consulta con error de tipeo (fuzzy, segunda estrategia) ---
@@ -84,7 +84,7 @@ Fecha: 2026-08-19 01:53:45
     "anio_valor": "2021",
     "valor": 15100000,
     "vigencia": "2024-06",
-    "nota_legal": "Este valor es informativo. No reemplaza el tr\u00e1mite formal ante el registro correspondiente."
+    "nota_legal": "Este valor es informativo. No reemplaza el trámite formal ante el registro correspondiente."
 }
 
 --- 5) Consulta ambigua -> escala a humano ---
@@ -118,7 +118,7 @@ Fecha: 2026-08-19 01:53:45
     "anio_detectado": "2024",
     "vigencia_consultada": "2024-06",
     "resultado": "no_encontrado",
-    "mensaje": "No se encontr\u00f3 ese veh\u00edculo en la tabla oficial vigente. No es posible estimar un valor aproximado."
+    "mensaje": "No se encontró ese vehículo en la tabla oficial vigente. No es posible estimar un valor aproximado."
 }
 
 --- 7) Panel admin: casos pendientes ---
@@ -151,7 +151,7 @@ Caso de ambiguedad detectado: #2
     "anio_valor": "2024",
     "valor": 14800000,
     "vigencia": "2024-06",
-    "nota_legal": "Este valor es informativo. No reemplaza el tr\u00e1mite formal ante el registro correspondiente."
+    "nota_legal": "Este valor es informativo. No reemplaza el trámite formal ante el registro correspondiente."
 }
 
 --- 10) Historico del vehiculo con anomalia (Agente Analista Historico) ---
@@ -198,7 +198,7 @@ Caso de ambiguedad detectado: #2
     "anio_valor": "2023",
     "valor": 27100000,
     "vigencia": "2024-06",
-    "nota_legal": "Este valor es informativo. No reemplaza el tr\u00e1mite formal ante el registro correspondiente."
+    "nota_legal": "Este valor es informativo. No reemplaza el trámite formal ante el registro correspondiente."
 }
 
 --- 12) API REST sin key -> rechazada ---
