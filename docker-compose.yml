@@ -16,4 +16,8 @@ services:
       # Cambiar esta key antes de exponer el servicio fuera de tu máquina.
       # Formato: key1:nombre_integracion1,key2:nombre_integracion2
       - AUTOVALUA_API_KEYS=demo-key-autovalua-2024:Integración de demostración
+      # Usuario/contraseña del panel admin (Basic Auth) — cambiar antes de
+      # exponer el servicio fuera de tu máquina.
+      - ADMIN_USER=admin
+      - ADMIN_PASSWORD=cambiar-esta-password-en-produccion
     restart: unless-stopped

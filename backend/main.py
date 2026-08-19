@@ -15,9 +15,12 @@ import os
 import json
 import glob
 import re
+import secrets
 from fastapi import FastAPI, HTTPException, Header, Depends
+from fastapi.security import HTTPBasic, HTTPBasicCredentials
 from fastapi.staticfiles import StaticFiles
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import FileResponse
 from pydantic import BaseModel
 
 import db
@@ -88,6 +91,27 @@ def verificar_api_key(x_api_key: str = Header(default=None)):
     return API_KEYS_VALIDAS[x_api_key]
 
 
+# ---------- Autenticación del panel administrativo (Basic Auth) ----------
+# Usuario/contraseña por variable de entorno, nunca hardcodeados en el
+# código — mismo criterio que las API keys (ver Sección 6, ciberseguridad,
+# del informe). El navegador cachea las credenciales tras el primer login y
+# las reenvía solas en cada pedido subsiguiente al panel (mismo realm).
+ADMIN_USER = os.environ.get("ADMIN_USER", "admin")
+ADMIN_PASSWORD = os.environ.get("ADMIN_PASSWORD", "cambiar-esta-password")
+_admin_security = HTTPBasic()
+
+
+def verificar_admin(credentials: HTTPBasicCredentials = Depends(_admin_security)):
+    usuario_ok = secrets.compare_digest(credentials.username, ADMIN_USER)
+    password_ok = secrets.compare_digest(credentials.password, ADMIN_PASSWORD)
+    if not (usuario_ok and password_ok):
+        raise HTTPException(
+            status_code=401, detail="Usuario o contraseña incorrectos.",
+            headers={"WWW-Authenticate": "Basic realm=\"AutoValua AI - Panel administrativo\""},
+        )
+    return credentials.username
+
+
 # ---------- Canal 1: Chatbot público ----------
 @app.post("/chat/consulta")
 def chat_consulta(payload: ConsultaChat):
@@ -121,7 +145,7 @@ def chat_historico(codigo: str):
 
 # ---------- Ciclo de ingesta (Scraper simulado + Ingestor + Validador) ----------
 @app.get("/admin/vigencias_disponibles")
-def vigencias_disponibles():
+def vigencias_disponibles(_admin: str = Depends(verificar_admin)):
     """Simula lo que el Agente Scraper detectaría en el portal de la DNRPA:
     lista los archivos de vigencia presentes y cuáles ya fueron ingeridos."""
     conn = db.get_conn()
@@ -149,7 +173,7 @@ def vigencias_disponibles():
 
 
 @app.post("/admin/ingestar/{nombre_archivo}")
-def admin_ingestar(nombre_archivo: str):
+def admin_ingestar(nombre_archivo: str, _admin: str = Depends(verificar_admin)):
     path = os.path.join(DATA_DIR, nombre_archivo)
     if not os.path.exists(path):
         raise HTTPException(404, "Archivo no encontrado")
@@ -163,7 +187,7 @@ def admin_ingestar(nombre_archivo: str):
 
 # ---------- Panel administrativo: casos escalados ----------
 @app.get("/admin/casos")
-def listar_casos(estado: str = "pendiente"):
+def listar_casos(estado: str = "pendiente", _admin: str = Depends(verificar_admin)):
     conn = db.get_conn()
     filtro = "" if estado == "todos" else "WHERE estado = ?"
     params = () if estado == "todos" else (estado,)
@@ -173,7 +197,7 @@ def listar_casos(estado: str = "pendiente"):
 
 
 @app.post("/admin/casos/{caso_id}/resolver")
-def resolver_caso(caso_id: int, payload: ResolucionCaso):
+def resolver_caso(caso_id: int, payload: ResolucionCaso, _admin: str = Depends(verificar_admin)):
     conn = db.get_conn()
     cur = conn.cursor()
     caso = cur.execute("SELECT * FROM casos_escalados WHERE id = ?", (caso_id,)).fetchone()
@@ -209,7 +233,7 @@ def resolver_caso(caso_id: int, payload: ResolucionCaso):
 
 
 @app.get("/admin/alias")
-def listar_alias():
+def listar_alias(_admin: str = Depends(verificar_admin)):
     conn = db.get_conn()
     filas = conn.execute("SELECT * FROM alias ORDER BY fecha DESC").fetchall()
     conn.close()
@@ -217,7 +241,7 @@ def listar_alias():
 
 
 @app.get("/admin/stats")
-def stats():
+def stats(_admin: str = Depends(verificar_admin)):
     conn = db.get_conn()
     c = conn.cursor()
     out = {
@@ -252,4 +276,16 @@ def crear_notificacion(payload: NotificacionConfig):
 
 
 # ---------- Frontend estático ----------
-app.mount("/", StaticFiles(directory=os.path.join(os.path.dirname(__file__), "static"), html=True), name="static")
+# /admin.html va con una ruta explícita (protegida) declarada ANTES del mount
+# genérico de abajo, para que Starlette la resuelva primero y el navegador
+# pida usuario/contraseña antes de mostrar la página, no solo antes de que
+# funcionen sus botones.
+STATIC_DIR = os.path.join(os.path.dirname(__file__), "static")
+
+
+@app.get("/admin.html")
+def admin_html(_admin: str = Depends(verificar_admin)):
+    return FileResponse(os.path.join(STATIC_DIR, "admin.html"))
+
+
+app.mount("/", StaticFiles(directory=STATIC_DIR, html=True), name="static")
