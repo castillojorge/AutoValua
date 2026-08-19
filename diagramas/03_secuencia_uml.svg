@@ -1,0 +1,104 @@
+<svg width="960" height="640" viewBox="0 0 960 640" xmlns="http://www.w3.org/2000/svg" font-family="Segoe UI, Arial, sans-serif">
+  <defs>
+    <marker id="arrow3" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M1 1L9 5L1 9" fill="none" stroke="#334155" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>
+    </marker>
+    <marker id="arrowOpen" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M1 1L9 5L1 9" fill="none" stroke="#64748b" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/>
+    </marker>
+  </defs>
+  <rect width="960" height="640" fill="#ffffff"/>
+  <text x="480" y="28" text-anchor="middle" font-size="18" font-weight="600" fill="#0f172a">Diagrama de secuencia — consulta con escalado y aprendizaje</text>
+
+  <!-- Actors / lifelines -->
+  <!-- x positions -->
+  <!-- Usuario 60, Chatbot 220, Orquestador 380, Matching 540, Memoria(DB) 700, Humano 860 -->
+
+  <g font-size="11.5" font-weight="600" fill="#334155">
+    <rect x="20" y="46" width="90" height="34" rx="6" fill="#f1f5f9" stroke="#64748b"/>
+    <text x="65" y="67" text-anchor="middle">Usuario</text>
+
+    <rect x="175" y="46" width="90" height="34" rx="6" fill="#e2e8f0" stroke="#64748b"/>
+    <text x="220" y="67" text-anchor="middle">Chatbot</text>
+
+    <rect x="335" y="46" width="90" height="34" rx="6" fill="#e2e8f0" stroke="#64748b"/>
+    <text x="380" y="67" text-anchor="middle">Orquestador</text>
+
+    <rect x="495" y="46" width="90" height="34" rx="6" fill="#dbeafe" stroke="#3b82f6"/>
+    <text x="540" y="67" text-anchor="middle" fill="#1e3a8a">Ag. Matching</text>
+
+    <rect x="655" y="46" width="90" height="34" rx="6" fill="#fef9c3" stroke="#ca8a04"/>
+    <text x="700" y="67" text-anchor="middle" fill="#713f12">Memoria</text>
+
+    <rect x="815" y="46" width="90" height="34" rx="6" fill="#fdf2f8" stroke="#db2777"/>
+    <text x="860" y="67" text-anchor="middle" fill="#831843">Equipo humano</text>
+  </g>
+
+  <!-- lifelines -->
+  <g stroke="#cbd5e1" stroke-width="1" stroke-dasharray="3 3">
+    <line x1="65" y1="80" x2="65" y2="600"/>
+    <line x1="220" y1="80" x2="220" y2="600"/>
+    <line x1="380" y1="80" x2="380" y2="600"/>
+    <line x1="540" y1="80" x2="540" y2="600"/>
+    <line x1="700" y1="80" x2="700" y2="600"/>
+    <line x1="860" y1="80" x2="860" y2="600"/>
+  </g>
+
+  <!-- messages -->
+  <g font-size="10.5" fill="#334155">
+    <line x1="65" y1="104" x2="220" y2="104" stroke="#334155" stroke-width="1.2" marker-end="url(#arrow3)"/>
+    <text x="140" y="98" text-anchor="middle">"cuánto vale mi corola 2021"</text>
+
+    <line x1="220" y1="128" x2="380" y2="128" stroke="#334155" stroke-width="1.2" marker-end="url(#arrow3)"/>
+    <text x="300" y="122" text-anchor="middle">POST /chat/consulta</text>
+
+    <line x1="380" y1="152" x2="540" y2="152" stroke="#334155" stroke-width="1.2" marker-end="url(#arrow3)"/>
+    <text x="460" y="146" text-anchor="middle">consultar(texto)</text>
+
+    <line x1="540" y1="176" x2="700" y2="176" stroke="#334155" stroke-width="1.2" marker-end="url(#arrow3)"/>
+    <text x="620" y="170" text-anchor="middle">¿alias aprendido?</text>
+    <line x1="700" y1="196" x2="540" y2="196" stroke="#94a3b8" stroke-width="1.2" stroke-dasharray="4 3" marker-end="url(#arrowOpen)"/>
+    <text x="620" y="212" text-anchor="middle" fill="#64748b">no hay alias</text>
+
+    <line x1="540" y1="234" x2="700" y2="234" stroke="#334155" stroke-width="1.2" marker-end="url(#arrow3)"/>
+    <text x="620" y="228" text-anchor="middle">fuzzy(texto) vs. catálogo vigente</text>
+    <line x1="700" y1="254" x2="540" y2="254" stroke="#94a3b8" stroke-width="1.2" stroke-dasharray="4 3" marker-end="url(#arrowOpen)"/>
+    <text x="620" y="270" text-anchor="middle" fill="#64748b">score = 68 (ambiguo, &lt;80)</text>
+
+    <line x1="540" y1="292" x2="700" y2="292" stroke="#334155" stroke-width="1.2" marker-end="url(#arrow3)"/>
+    <text x="620" y="286" text-anchor="middle">fuzzy_solo_modelo(texto) — 2do intento</text>
+    <line x1="700" y1="312" x2="540" y2="312" stroke="#94a3b8" stroke-width="1.2" stroke-dasharray="4 3" marker-end="url(#arrowOpen)"/>
+    <text x="620" y="328" text-anchor="middle" fill="#64748b">score = 72 (sigue &lt;80)</text>
+
+    <line x1="540" y1="350" x2="860" y2="350" stroke="#db2777" stroke-width="1.3" marker-end="url(#arrow3)"/>
+    <text x="700" y="344" text-anchor="middle" fill="#9d174d">crea caso_escalado(candidatos, scores)</text>
+
+    <line x1="540" y1="374" x2="220" y2="374" stroke="#334155" stroke-width="1.2" stroke-dasharray="4 3" marker-end="url(#arrowOpen)"/>
+    <text x="380" y="368" text-anchor="middle">"derivado a revisión, caso #id"</text>
+
+    <line x1="220" y1="398" x2="65" y2="398" stroke="#334155" stroke-width="1.2" stroke-dasharray="4 3" marker-end="url(#arrowOpen)"/>
+    <text x="140" y="392" text-anchor="middle">muestra mensaje</text>
+
+    <!-- humano resuelve -->
+    <rect x="815" y="420" width="90" height="30" rx="6" fill="#fdf2f8" stroke="#db2777" stroke-width="1"/>
+    <text x="860" y="440" text-anchor="middle" font-weight="600" fill="#831843" font-size="10.5">revisa panel admin</text>
+
+    <line x1="860" y1="466" x2="700" y2="466" stroke="#7c3aed" stroke-width="1.3" marker-end="url(#arrow3)"/>
+    <text x="780" y="460" text-anchor="middle" fill="#6d28d9">asignar_alias(código, alias)</text>
+    <text x="780" y="480" text-anchor="middle" fill="#6d28d9" font-style="italic">memoria procedimental actualizada</text>
+
+    <!-- nueva consulta -->
+    <line x1="65" y1="518" x2="220" y2="518" stroke="#334155" stroke-width="1.2" marker-end="url(#arrow3)"/>
+    <text x="140" y="512" text-anchor="middle">misma consulta, otra vez</text>
+
+    <line x1="220" y1="536" x2="540" y2="536" stroke="#334155" stroke-width="1.2" marker-end="url(#arrow3)"/>
+    <text x="380" y="530" text-anchor="middle">consultar(texto)</text>
+
+    <line x1="540" y1="554" x2="700" y2="554" stroke="#334155" stroke-width="1.2" marker-end="url(#arrow3)"/>
+    <text x="620" y="548" text-anchor="middle">¿alias aprendido?</text>
+    <line x1="700" y1="572" x2="540" y2="572" stroke="#16a34a" stroke-width="1.4" marker-end="url(#arrow3)"/>
+    <text x="620" y="588" text-anchor="middle" fill="#15803d" font-weight="600">sí → match directo, confianza 100</text>
+  </g>
+
+  <text x="480" y="620" text-anchor="middle" font-size="10.5" fill="#94a3b8">Figura 3 — Secuencia completa: consulta ambigua, escalado, resolución humana y aprendizaje aplicado a la próxima consulta</text>
+</svg>
