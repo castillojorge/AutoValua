@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AutoValúa AI — Panel Administrativo</title>
+<style>
+  :root{--azul:#1a56db;--azul-osc:#123a99;--gris-bg:#f4f6fb;--borde:#e2e8f0;--verde:#16a34a;--amarillo:#d97706;--rojo:#dc2626;}
+  *{box-sizing:border-box;}
+  body{font-family:'Segoe UI',system-ui,sans-serif;background:var(--gris-bg);margin:0;color:#1e293b;}
+  header{background:linear-gradient(135deg,var(--azul),var(--azul-osc));color:#fff;padding:18px 24px;display:flex;justify-content:space-between;align-items:center;}
+  header h1{font-size:1.15rem;margin:0;}
+  header a{color:#dbe6ff;font-size:.85rem;text-decoration:none;}
+  .wrap{max-width:1000px;margin:24px auto;padding:0 16px;}
+  .stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px;margin-bottom:20px;}
+  .stat{background:#fff;border:1px solid var(--borde);border-radius:12px;padding:14px 16px;}
+  .stat .n{font-size:1.6rem;font-weight:700;color:var(--azul-osc);}
+  .stat .l{font-size:.78rem;color:#64748b;}
+  .panel{background:#fff;border:1px solid var(--borde);border-radius:12px;margin-bottom:18px;overflow:hidden;}
+  .panel h2{margin:0;padding:14px 18px;border-bottom:1px solid var(--borde);font-size:1rem;display:flex;justify-content:space-between;align-items:center;}
+  .panel h2 button{font-size:.75rem;padding:5px 10px;border-radius:8px;border:1px solid var(--borde);background:#fff;cursor:pointer;}
+  .caso{padding:14px 18px;border-bottom:1px solid var(--borde);}
+  .caso:last-child{border-bottom:none;}
+  .caso .top{display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;}
+  .tag{font-size:.72rem;padding:2px 9px;border-radius:20px;font-weight:600;}
+  .tag.ambiguedad_consulta{background:#fef3c7;color:var(--amarillo);}
+  .tag.anomalia_validacion{background:#fee2e2;color:var(--rojo);}
+  pre{background:#f8fafc;border-radius:8px;padding:10px;font-size:.78rem;overflow-x:auto;margin:8px 0;}
+  .acciones{display:flex;gap:6px;flex-wrap:wrap;margin-top:8px;align-items:center;}
+  .acciones input{padding:6px 8px;border:1px solid var(--borde);border-radius:6px;font-size:.8rem;}
+  .acciones button{padding:6px 12px;border-radius:8px;border:none;cursor:pointer;font-size:.78rem;}
+  .btn-ok{background:var(--verde);color:#fff;}
+  .btn-desc{background:#e2e8f0;color:#334155;}
+  .vacio{padding:24px;text-align:center;color:#94a3b8;font-size:.88rem;}
+  .ingesta{display:flex;gap:8px;flex-wrap:wrap;padding:14px 18px;}
+  .ingesta .item{display:flex;align-items:center;gap:8px;background:#f8fafc;border:1px solid var(--borde);border-radius:8px;padding:8px 12px;font-size:.82rem;}
+</style>
+</head>
+<body>
+<header>
+  <h1>🛡️ Panel Administrativo — Casos Pendientes</h1>
+  <a href="/index.html">← Volver al chatbot</a>
+</header>
+<div class="wrap">
+  <div class="stats" id="stats"></div>
+
+  <div class="panel">
+    <h2>Ciclo de ingesta (Scraper + Ingestor + Validador) <button onclick="cargarVigencias()">Refrescar</button></h2>
+    <div class="ingesta" id="vigencias"></div>
+  </div>
+
+  <div class="panel">
+    <h2>Casos escalados pendientes <button onclick="cargarCasos()">Refrescar</button></h2>
+    <div id="casos"></div>
+  </div>
+
+  <div class="panel">
+    <h2>Alias aprendidos (memoria procedimental)</h2>
+    <div id="alias"></div>
+  </div>
+</div>
+
+<script>
+async function cargarStats(){
+  const r = await fetch("/admin/stats"); const s = await r.json();
+  const labels = {
+    vehiculos_en_catalogo:"Vehículos en catálogo", vigencias_ingeridas:"Vigencias ingeridas",
+    consultas_totales:"Consultas totales", consultas_resueltas_automaticamente:"Resueltas auto",
+    consultas_escaladas:"Escaladas", consultas_no_encontradas:"No encontradas",
+    casos_pendientes:"Casos pendientes", alias_aprendidos:"Alias aprendidos"
+  };
+  document.getElementById("stats").innerHTML = Object.entries(labels).map(([k,l])=>
+    `<div class="stat"><div class="n">${s[k]}</div><div class="l">${l}</div></div>`).join("");
+}
+
+async function cargarVigencias(){
+  const r = await fetch("/admin/vigencias_disponibles"); const vs = await r.json();
+  document.getElementById("vigencias").innerHTML = vs.map(v => `
+    <div class="item">
+      <b>${v.vigencia}</b>
+      ${v.ingerida ? '<span style="color:#16a34a">✓ ingerida</span>' : `<button class="btn-ok" onclick="ingestar('${v.archivo}')">Ingerir</button>`}
+    </div>
+  `).join("") || '<div class="vacio">No hay archivos de vigencia detectados.</div>';
+}
+
+async function ingestar(archivo){
+  const r = await fetch(`/admin/ingestar/${archivo}`, {method:"POST"});
+  const data = await r.json();
+  alert(`Ingesta OK: ${data.ingesta.vehiculos_ingeridos} vehículos.\nValidación: ${data.validacion.anomalias.length} anomalías, ${data.validacion.desaparecidos.length} desaparecidos.`);
+  cargarVigencias(); cargarStats(); cargarCasos();
+}
+
+async function cargarCasos(){
+  const r = await fetch("/admin/casos?estado=pendiente"); const casos = await r.json();
+  if(casos.length === 0){
+    document.getElementById("casos").innerHTML = '<div class="vacio">No hay casos pendientes 🎉</div>';
+    return;
+  }
+  document.getElementById("casos").innerHTML = casos.map(c => {
+    const d = c.detalle;
+    let cuerpo = "";
+    if(c.tipo === "ambiguedad_consulta"){
+      cuerpo = `<div>Consulta: <b>"${d.consulta}"</b></div><pre>${JSON.stringify(d.candidatos, null, 2)}</pre>
+        <div class="acciones">
+          <input type="text" placeholder="código correcto (ej. 10001)" id="cod-${c.id}">
+          <input type="text" placeholder="alias a guardar" id="ali-${c.id}" value="${(d.texto_normalizado||'').toLowerCase()}">
+          <button class="btn-ok" onclick="resolverAlias(${c.id})">Asignar y aprender</button>
+          <button class="btn-desc" onclick="resolver(${c.id},'descartar')">Descartar</button>
+        </div>`;
+    } else {
+      cuerpo = `<div>Vigencia ${d.vigencia} vs ${d.vigencia_comparada}</div><pre>${JSON.stringify({anomalias:d.anomalias, desaparecidos:d.desaparecidos}, null, 2)}</pre>
+        <div class="acciones">
+          <button class="btn-ok" onclick="resolver(${c.id},'confirmar_anomalia')">Confirmar revisado</button>
+          <button class="btn-desc" onclick="resolver(${c.id},'descartar')">Descartar (falso positivo)</button>
+        </div>`;
+    }
+    return `<div class="caso">
+      <div class="top"><span class="tag ${c.tipo}">${c.tipo.replace(/_/g,' ')}</span><span style="font-size:.75rem;color:#94a3b8">#${c.id} · ${c.fecha}</span></div>
+      ${cuerpo}
+    </div>`;
+  }).join("");
+}
+
+async function resolver(id, accion){
+  await fetch(`/admin/casos/${id}/resolver`, {method:"POST", headers:{"Content-Type":"application/json"},
+    body: JSON.stringify({accion})});
+  cargarCasos(); cargarStats();
+}
+
+async function resolverAlias(id){
+  const codigo = document.getElementById(`cod-${id}`).value.trim();
+  const alias = document.getElementById(`ali-${id}`).value.trim();
+  if(!codigo || !alias){ alert("Completá código y alias"); return; }
+  await fetch(`/admin/casos/${id}/resolver`, {method:"POST", headers:{"Content-Type":"application/json"},
+    body: JSON.stringify({accion:"asignar_alias", codigo_resuelto:codigo, alias_texto:alias})});
+  cargarCasos(); cargarStats(); cargarAlias();
+}
+
+async function cargarAlias(){
+  const r = await fetch("/admin/alias"); const al = await r.json();
+  document.getElementById("alias").innerHTML = al.length ? al.map(a =>
+    `<div class="caso"><b>${a.alias_texto}</b> → código ${a.codigo_resuelto} <span style="color:#94a3b8;font-size:.75rem">(${a.fecha})</span></div>`
+  ).join("") : '<div class="vacio">Todavía no se aprendió ningún alias.</div>';
+}
+
+cargarStats(); cargarVigencias(); cargarCasos(); cargarAlias();
+</script>
+</body>
+</html>

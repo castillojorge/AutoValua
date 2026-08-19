@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AutoValúa AI — Consulta de Valores</title>
+<style>
+  :root{
+    --azul:#1a56db; --azul-osc:#123a99; --gris-bg:#f4f6fb; --verde:#16a34a; --amarillo:#d97706; --rojo:#dc2626;
+    --borde:#e2e8f0;
+  }
+  *{box-sizing:border-box;}
+  body{font-family:'Segoe UI',system-ui,sans-serif;background:var(--gris-bg);margin:0;padding:0;color:#1e293b;}
+  header{background:linear-gradient(135deg,var(--azul),var(--azul-osc));color:#fff;padding:18px 24px;display:flex;align-items:center;justify-content:space-between;}
+  header h1{font-size:1.15rem;margin:0;display:flex;align-items:center;gap:10px;}
+  header a{color:#dbe6ff;font-size:.85rem;text-decoration:none;}
+  .wrap{max-width:640px;margin:24px auto;padding:0 16px;}
+  .chatbox{background:#fff;border-radius:14px;box-shadow:0 2px 12px rgba(0,0,0,.06);overflow:hidden;border:1px solid var(--borde);}
+  .mensajes{height:460px;overflow-y:auto;padding:18px;display:flex;flex-direction:column;gap:12px;}
+  .msg{max-width:80%;padding:10px 14px;border-radius:12px;font-size:.92rem;line-height:1.4;white-space:pre-wrap;}
+  .bot{background:#eef2ff;align-self:flex-start;border-bottom-left-radius:2px;}
+  .user{background:var(--azul);color:#fff;align-self:flex-end;border-bottom-right-radius:2px;}
+  .card{border:1px solid var(--borde);border-radius:10px;padding:12px 14px;background:#fff;align-self:flex-start;max-width:85%;}
+  .card h3{margin:0 0 4px;font-size:1rem;}
+  .card .valor{font-size:1.4rem;font-weight:700;color:var(--azul-osc);}
+  .card .meta{font-size:.78rem;color:#64748b;margin-top:4px;}
+  .badge{display:inline-block;font-size:.7rem;padding:2px 8px;border-radius:20px;margin-top:6px;}
+  .badge.ok{background:#dcfce7;color:var(--verde);}
+  .badge.warn{background:#fef3c7;color:var(--amarillo);}
+  .badge.err{background:#fee2e2;color:var(--rojo);}
+  form{display:flex;gap:8px;padding:14px;border-top:1px solid var(--borde);background:#fafbfe;}
+  input[type=text]{flex:1;padding:11px 14px;border-radius:10px;border:1px solid var(--borde);font-size:.92rem;}
+  button{background:var(--azul);color:#fff;border:none;padding:0 20px;border-radius:10px;cursor:pointer;font-size:.9rem;}
+  button:hover{background:var(--azul-osc);}
+  .sugerencias{display:flex;gap:6px;flex-wrap:wrap;padding:0 14px 12px;}
+  .sugerencias span{background:#eef2ff;color:var(--azul-osc);padding:5px 10px;border-radius:20px;font-size:.78rem;cursor:pointer;}
+  footer{text-align:center;font-size:.75rem;color:#94a3b8;margin:14px 0;}
+</style>
+</head>
+<body>
+<header>
+  <h1>🚗 AutoValúa AI — Consulta de Valores</h1>
+  <a href="/admin.html">Panel administrativo →</a>
+</header>
+<div class="wrap">
+  <div class="chatbox">
+    <div class="mensajes" id="mensajes">
+      <div class="msg bot">¡Hola! Soy el asistente de AutoValúa AI. Preguntame por el valor de un auto o moto, por ejemplo: <b>"cuánto vale un corola 2021"</b> o <b>"toyota hilux srx 2024"</b>.</div>
+    </div>
+    <div class="sugerencias">
+      <span onclick="preguntar('cuanto vale mi corola 2021')">corola 2021</span>
+      <span onclick="preguntar('toyota hilux srx 2024')">toyota hilux srx</span>
+      <span onclick="preguntar('vento highline')">vento highline</span>
+      <span onclick="preguntar('un auto que no existe modelo xyz123')">consulta sin match</span>
+    </div>
+    <form id="form">
+      <input type="text" id="input" placeholder="Escribí tu consulta..." autocomplete="off">
+      <button type="submit">Enviar</button>
+    </form>
+  </div>
+  <footer>Prototipo académico — UTN FRBA · Los valores son informativos y no reemplazan el trámite oficial ante la DNRPA.</footer>
+</div>
+
+<script>
+const API = "";
+const mensajes = document.getElementById("mensajes");
+const form = document.getElementById("form");
+const input = document.getElementById("input");
+
+function agregarMsg(html, clase){
+  const d = document.createElement("div");
+  d.className = "msg " + clase;
+  d.innerHTML = html;
+  mensajes.appendChild(d);
+  mensajes.scrollTop = mensajes.scrollHeight;
+}
+
+function fmt(v){ return v==null? "-" : "$" + v.toLocaleString("es-AR"); }
+
+async function preguntar(texto){
+  input.value = "";
+  agregarMsg(texto, "user");
+  agregarMsg("Consultando la tabla oficial...", "bot");
+  const loading = mensajes.lastChild;
+
+  try{
+    const r = await fetch(API + "/chat/consulta", {
+      method:"POST", headers:{"Content-Type":"application/json"},
+      body: JSON.stringify({texto, usuario:"usuario_web"})
+    });
+    const data = await r.json();
+    loading.remove();
+
+    if(data.resultado === "match"){
+      const v = data.vehiculo;
+      agregarMsg(`
+        <h3>${v.marca} ${v.modelo}</h3>
+        <div class="meta">${v.carroceria} · código ${v.codigo}</div>
+        <div class="valor">${fmt(data.valor)}</div>
+        <div class="meta">Valor de referencia ${data.anio_valor} · vigencia ${data.vigencia}</div>
+        <span class="badge ${data.confianza>=95?'ok':'warn'}">match ${data.estrategia.replace(/_/g,' ')} · confianza ${data.confianza}%</span>
+        <div class="meta" style="margin-top:8px">${data.nota_legal}</div>
+      `, "card");
+    } else if (data.resultado === "escalado_a_humano"){
+      const cands = data.candidatos.map(c=>`${c.opcion} (${c.score}%)`).join("<br>");
+      agregarMsg(`No pude resolver la consulta con confianza suficiente y la derivé al equipo humano (caso #${data.caso_id}).<br><br><b>Candidatos evaluados:</b><br>${cands}`, "bot");
+    } else if (data.resultado === "no_encontrado"){
+      agregarMsg(data.mensaje || "No se encontró ese vehículo en la tabla oficial vigente.", "bot");
+    } else {
+      agregarMsg(JSON.stringify(data), "bot");
+    }
+  } catch(e){
+    loading.remove();
+    agregarMsg("Error de conexión con el servidor.", "bot");
+  }
+}
+
+form.addEventListener("submit", (e)=>{
+  e.preventDefault();
+  const texto = input.value.trim();
+  if(texto) preguntar(texto);
+});
+</script>
+</body>
+</html>
