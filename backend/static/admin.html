@@ -25,6 +25,7 @@
   .tag{font-size:.72rem;padding:2px 9px;border-radius:20px;font-weight:600;}
   .tag.ambiguedad_consulta{background:#fef3c7;color:var(--amarillo);}
   .tag.anomalia_validacion{background:#fee2e2;color:var(--rojo);}
+  .tag.revision_layout_ingesta{background:#ede9fe;color:#6d28d9;}
   pre{background:#f8fafc;border-radius:8px;padding:10px;font-size:.78rem;overflow-x:auto;margin:8px 0;}
   .acciones{display:flex;gap:6px;flex-wrap:wrap;margin-top:8px;align-items:center;}
   .acciones input{padding:6px 8px;border:1px solid var(--borde);border-radius:6px;font-size:.8rem;}
@@ -105,6 +106,14 @@ async function cargarCasos(){
           <input type="text" placeholder="código correcto (ej. 10001)" id="cod-${c.id}">
           <input type="text" placeholder="alias a guardar" id="ali-${c.id}" value="${(d.texto_normalizado||'').toLowerCase()}">
           <button class="btn-ok" onclick="resolverAlias(${c.id})">Asignar y aprender</button>
+          <button class="btn-desc" onclick="resolver(${c.id},'descartar')">Descartar</button>
+        </div>`;
+    } else if(c.tipo === "revision_layout_ingesta"){
+      cuerpo = `<div>Código <b>${d.codigo}</b> · vigencia ${d.vigencia}</div>
+        <div style="margin:6px 0;color:#64748b">${d.motivo}</div>
+        <pre>${d.texto_sin_interpretar}</pre>
+        <div class="acciones">
+          <button class="btn-ok" onclick="resolver(${c.id},'confirmar_anomalia')">Confirmar revisado</button>
           <button class="btn-desc" onclick="resolver(${c.id},'descartar')">Descartar</button>
         </div>`;
     } else {
