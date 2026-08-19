@@ -20,6 +20,7 @@ ambigüedad de formato, el sistema no adivina, la deriva.
 """
 import json
 import os
+import gc
 from db import get_conn
 import dnrpa_parser
 
@@ -103,7 +104,7 @@ def _ingerir_pdf(path_archivo: str, vigencia_param: str = None) -> dict:
             "SELECT 1 FROM vigencias_ingeridas WHERE vigencia = ?", (vigencia,)
         ).fetchone()
 
-        for page in pdf.pages:
+        for i, page in enumerate(pdf.pages):
             rows = dnrpa_parser.parse_page(page)
             for v in rows:
                 _insertar_vehiculo(cur, vigencia, v)
@@ -119,6 +120,11 @@ def _ingerir_pdf(path_archivo: str, vigencia_param: str = None) -> dict:
                         "motivo": "No se encontró una carrocería conocida para separar modelo/carrocería.",
                     }, ensure_ascii=False),))
             page.flush_cache()
+            pdf.pages[i] = None  # liberar referencia al árbol de layout de la página
+            del page, rows
+            if (i + 1) % 20 == 0:
+                conn.commit()  # commits periódicos: si falla a mitad de camino, no se pierde todo
+                gc.collect()
 
     cur.execute("""
         INSERT INTO vigencias_ingeridas (vigencia, fuente, cantidad_vehiculos)

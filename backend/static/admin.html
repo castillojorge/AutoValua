@@ -79,16 +79,33 @@ async function cargarVigencias(){
   document.getElementById("vigencias").innerHTML = vs.map(v => `
     <div class="item">
       <b>${v.vigencia}</b>
-      ${v.ingerida ? '<span style="color:#16a34a">✓ ingerida</span>' : `<button class="btn-ok" onclick="ingestar('${v.archivo}')">Ingerir</button>`}
+      ${v.ingerida ? '<span style="color:#16a34a">✓ ingerida</span>' : `<button class="btn-ok" onclick="ingestar('${v.archivo}', this)">Ingerir${v.archivo.endsWith('.pdf') ? ' (PDF, ~2-3 min)' : ''}</button>`}
     </div>
   `).join("") || '<div class="vacio">No hay archivos de vigencia detectados.</div>';
 }
 
-async function ingestar(archivo){
-  const r = await fetch(`/admin/ingestar/${archivo}`, {method:"POST"});
-  const data = await r.json();
-  alert(`Ingesta OK: ${data.ingesta.vehiculos_ingeridos} vehículos.\nValidación: ${data.validacion.anomalias.length} anomalías, ${data.validacion.desaparecidos.length} desaparecidos.`);
-  cargarVigencias(); cargarStats(); cargarCasos();
+async function ingestar(archivo, btnEl){
+  const original = btnEl ? btnEl.innerHTML : null;
+  if(btnEl){
+    btnEl.disabled = true;
+    btnEl.innerHTML = "⏳ Procesando...";
+  }
+  try{
+    const r = await fetch(`/admin/ingestar/${archivo}`, {method:"POST"});
+    if(!r.ok){
+      const errText = await r.text();
+      alert(`Error al ingerir (HTTP ${r.status}):\n${errText}`);
+      return;
+    }
+    const data = await r.json();
+    const revisar = data.ingesta.filas_a_revisar ? `\nFilas a revisar manualmente: ${data.ingesta.filas_a_revisar}` : "";
+    alert(`Ingesta OK: ${data.ingesta.vehiculos_ingeridos} vehículos.${revisar}\nValidación: ${data.validacion.anomalias.length} anomalías, ${data.validacion.desaparecidos.length} desaparecidos.`);
+  } catch(e){
+    alert(`Error de conexión durante la ingesta: ${e.message}\n\nSi estabas ingiriendo el PDF real (217 páginas, tarda 2-3 min), esto puede indicar que el contenedor se quedó sin memoria. Revisá "docker compose logs" y considerá aumentar la memoria asignada a Docker.`);
+  } finally {
+    if(btnEl){ btnEl.disabled = false; btnEl.innerHTML = original; }
+    cargarVigencias(); cargarStats(); cargarCasos();
+  }
 }
 
 async function cargarCasos(){
