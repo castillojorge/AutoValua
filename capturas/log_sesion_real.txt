@@ -1,0 +1,219 @@
+=== LOG DE SESION REAL — AutoValúa AI ===
+Fecha: 2026-08-19 01:53:45
+
+--- 1) Ingesta vigencia 2024-05 (primera vigencia, sin comparación) ---
+[01:53:47]
+{
+    "ingesta": {
+        "vigencia": "2024-05",
+        "vehiculos_ingeridos": 20,
+        "ya_existia": false
+    },
+    "validacion": {
+        "vigencia": "2024-05",
+        "mensaje": "Primera vigencia ingerida, no hay comparaci\u00f3n posible.",
+        "anomalias": [],
+        "desaparecidos": []
+    }
+}
+
+--- 2) Ingesta vigencia 2024-06 (dispara Validador, detecta anomalía real) ---
+[01:53:47]
+{
+    "ingesta": {
+        "vigencia": "2024-06",
+        "vehiculos_ingeridos": 20,
+        "ya_existia": false
+    },
+    "validacion": {
+        "vigencia": "2024-06",
+        "vigencia_comparada": "2024-05",
+        "vehiculos_comparados": 20,
+        "anomalias": [
+            {
+                "codigo": "10003",
+                "marca": "TOYOTA",
+                "modelo": "HILUX SRX 4X4 2.8 TDI",
+                "variacion_pct": 233.1,
+                "z_score": 4.25,
+                "media_mercado_pct": 14.3
+            }
+        ],
+        "desaparecidos": []
+    }
+}
+
+--- 3) Consulta con match exacto ---
+[01:53:47]
+{
+    "consulta": "toyota hilux srx 4x4 2.8 tdi",
+    "anio_detectado": null,
+    "vigencia_consultada": "2024-06",
+    "resultado": "match",
+    "estrategia": "coincidencia_exacta",
+    "confianza": 100.0,
+    "vehiculo": {
+        "codigo": "10003",
+        "marca": "TOYOTA",
+        "modelo": "HILUX SRX 4X4 2.8 TDI",
+        "carroceria": "PICK-UP D/CAB",
+        "tipo": "A"
+    },
+    "anio_valor": "2024",
+    "valor": 52300000,
+    "vigencia": "2024-06",
+    "nota_legal": "Este valor es informativo. No reemplaza el tr\u00e1mite formal ante el registro correspondiente."
+}
+
+--- 4) Consulta con error de tipeo (fuzzy, segunda estrategia) ---
+[01:53:47]
+{
+    "consulta": "cuanto vale mi corola xei 2021",
+    "anio_detectado": "2021",
+    "vigencia_consultada": "2024-06",
+    "resultado": "match",
+    "estrategia": "fuzzy_solo_modelo",
+    "confianza": 80.0,
+    "vehiculo": {
+        "codigo": "10001",
+        "marca": "TOYOTA",
+        "modelo": "COROLLA XEI 1.8",
+        "carroceria": "SEDAN 4P",
+        "tipo": "A"
+    },
+    "anio_valor": "2021",
+    "valor": 15100000,
+    "vigencia": "2024-06",
+    "nota_legal": "Este valor es informativo. No reemplaza el tr\u00e1mite formal ante el registro correspondiente."
+}
+
+--- 5) Consulta ambigua -> escala a humano ---
+[01:53:48]
+{
+    "consulta": "auto 1.6 5 puertas",
+    "anio_detectado": null,
+    "vigencia_consultada": "2024-06",
+    "resultado": "escalado_a_humano",
+    "caso_id": 2,
+    "candidatos": [
+        {
+            "opcion": "PEUGEOT 208 ACTIVE 1.6 5P",
+            "score": 60.5
+        },
+        {
+            "opcion": "FORD FIESTA KINETIC S 1.6 5P",
+            "score": 52.2
+        },
+        {
+            "opcion": "RENAULT SANDERO STEPWAY INTENS 1.6 5P",
+            "score": 50.9
+        }
+    ]
+}
+
+--- 6) Consulta inexistente -> anti-alucinacion ---
+[01:53:48]
+{
+    "consulta": "lamborghini aventador 2024",
+    "anio_detectado": "2024",
+    "vigencia_consultada": "2024-06",
+    "resultado": "no_encontrado",
+    "mensaje": "No se encontr\u00f3 ese veh\u00edculo en la tabla oficial vigente. No es posible estimar un valor aproximado."
+}
+
+--- 7) Panel admin: casos pendientes ---
+[01:53:48]
+Caso de ambiguedad detectado: #2
+
+--- 8) Equipo humano resuelve el caso, asigna alias (APRENDIZAJE) ---
+[01:53:48]
+{
+    "caso_id": 2,
+    "estado": "resuelto"
+}
+
+--- 9) Se repite la MISMA consulta ambigua: ahora resuelve automatico por alias ---
+[01:53:48]
+{
+    "consulta": "auto 1.6 5 puertas",
+    "anio_detectado": null,
+    "vigencia_consultada": "2024-06",
+    "resultado": "match",
+    "estrategia": "alias_aprendido",
+    "confianza": 100.0,
+    "vehiculo": {
+        "codigo": "80001",
+        "marca": "PEUGEOT",
+        "modelo": "208 ACTIVE 1.6",
+        "carroceria": "5P",
+        "tipo": "A"
+    },
+    "anio_valor": "2024",
+    "valor": 14800000,
+    "vigencia": "2024-06",
+    "nota_legal": "Este valor es informativo. No reemplaza el tr\u00e1mite formal ante el registro correspondiente."
+}
+
+--- 10) Historico del vehiculo con anomalia (Agente Analista Historico) ---
+[01:53:48]
+{
+    "resultado": "ok",
+    "codigo": "10003",
+    "marca": "TOYOTA",
+    "modelo": "HILUX SRX 4X4 2.8 TDI",
+    "serie": [
+        {
+            "vigencia": "2024-05",
+            "anio_valor": "2024",
+            "valor": 15700000
+        },
+        {
+            "vigencia": "2024-06",
+            "anio_valor": "2024",
+            "valor": 52300000
+        }
+    ],
+    "variacion": {
+        "absoluta": 36600000,
+        "porcentual": 233.1
+    }
+}
+
+--- 11) API REST autenticada (integracion de terceros) ---
+[01:53:48]
+{
+    "consulta": "volkswagen vento highline 2023",
+    "anio_detectado": "2023",
+    "vigencia_consultada": "2024-06",
+    "resultado": "match",
+    "estrategia": "fuzzy_marca_modelo",
+    "confianza": 100.0,
+    "vehiculo": {
+        "codigo": "20002",
+        "marca": "VOLKSWAGEN",
+        "modelo": "VENTO 2.0 TSI HIGHLINE",
+        "carroceria": "SEDAN 4P",
+        "tipo": "A"
+    },
+    "anio_valor": "2023",
+    "valor": 27100000,
+    "vigencia": "2024-06",
+    "nota_legal": "Este valor es informativo. No reemplaza el tr\u00e1mite formal ante el registro correspondiente."
+}
+
+--- 12) API REST sin key -> rechazada ---
+[01:53:48]
+HTTP 401 - %s
+
+--- 13) Estadisticas finales del sistema ---
+[01:53:48]
+{
+    "vehiculos_en_catalogo": 20,
+    "vigencias_ingeridas": 2,
+    "consultas_totales": 6,
+    "consultas_resueltas_automaticamente": 4,
+    "consultas_escaladas": 1,
+    "consultas_no_encontradas": 1,
+    "casos_pendientes": 1,
+    "alias_aprendidos": 1
+}
