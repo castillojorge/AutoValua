@@ -29,7 +29,22 @@ app = FastAPI(title="AutoValúa AI", version="0.1.0")
 app.add_middleware(CORSMiddleware, allow_origins=["*"], allow_methods=["*"], allow_headers=["*"])
 
 DATA_DIR = os.path.join(os.path.dirname(__file__), "data")
-API_KEYS_VALIDAS = {"demo-key-autovalua-2024": "Integración de demostración"}
+
+# --- Seguridad: las API keys NO se hardcodean en el código fuente.
+# Se leen de una variable de entorno (separada por comas: "key1:nombre1,key2:nombre2").
+# En este prototipo se provee un valor por defecto SOLO para que la demo funcione
+# out-of-the-box; en un entorno real esa variable se define en el hosting (Render:
+# Environment > Add Environment Variable) y nunca se commitea.
+def _cargar_api_keys():
+    raw = os.environ.get("AUTOVALUA_API_KEYS", "demo-key-autovalua-2024:Integración de demostración")
+    keys = {}
+    for par in raw.split(","):
+        if ":" in par:
+            k, nombre = par.split(":", 1)
+            keys[k.strip()] = nombre.strip()
+    return keys
+
+API_KEYS_VALIDAS = _cargar_api_keys()
 
 
 @app.on_event("startup")
