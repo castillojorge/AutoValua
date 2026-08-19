@@ -14,6 +14,7 @@ DNRPA en este prototipo académico).
 import os
 import json
 import glob
+import re
 from fastapi import FastAPI, HTTPException, Header, Depends
 from fastapi.staticfiles import StaticFiles
 from fastapi.middleware.cors import CORSMiddleware
@@ -126,11 +127,23 @@ def vigencias_disponibles():
     conn = db.get_conn()
     ingeridas = {r["vigencia"] for r in conn.execute("SELECT vigencia FROM vigencias_ingeridas").fetchall()}
     conn.close()
-    archivos = sorted(glob.glob(os.path.join(DATA_DIR, "vigencia_*.json")))
+    archivos = sorted(glob.glob(os.path.join(DATA_DIR, "vigencia_*.json"))) + \
+               sorted(glob.glob(os.path.join(DATA_DIR, "vigencia_*.pdf")))
     out = []
     for a in archivos:
-        with open(a, encoding="utf-8") as f:
-            v = json.load(f).get("vigencia")
+        if a.endswith(".pdf"):
+            texto = None
+            try:
+                import pdfplumber
+                with pdfplumber.open(a) as pdf:
+                    texto = pdf.pages[0].extract_text() or ""
+            except Exception:
+                texto = ""
+            m = re.search(r"Vigencia\s+(\d{2})/(\d{2})/(\d{4})", texto or "")
+            v = f"{m.group(3)}-{m.group(2)}-{m.group(1)}" if m else None
+        else:
+            with open(a, encoding="utf-8") as f:
+                v = json.load(f).get("vigencia")
         out.append({"archivo": os.path.basename(a), "vigencia": v, "ingerida": v in ingeridas})
     return out
 
