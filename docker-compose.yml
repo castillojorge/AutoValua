@@ -1,0 +1,19 @@
+# Levantar todo con: docker compose up --build
+# Chatbot:        http://localhost:8000
+# Panel admin:    http://localhost:8000/admin.html
+#
+# Los datos (SQLite + archivos de vigencia) quedan en ./backend/data,
+# montados como volumen — sobreviven a un rebuild de la imagen.
+
+services:
+  autovalua:
+    build: ./backend
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./backend/data:/app/data
+    environment:
+      # Cambiar esta key antes de exponer el servicio fuera de tu máquina.
+      # Formato: key1:nombre_integracion1,key2:nombre_integracion2
+      - AUTOVALUA_API_KEYS=demo-key-autovalua-2024:Integración de demostración
+    restart: unless-stopped

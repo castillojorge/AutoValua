@@ -47,7 +47,36 @@ su valor).
 | Frontend | HTML + JS vanilla | Sin build step, servido directo por FastAPI (`StaticFiles`), suficiente para demostrar el flujo completo |
 | Despliegue | Render (free tier) | Deploy directo desde GitHub, sin tarjeta de crédito |
 
-## Cómo correrlo localmente
+## Cómo correrlo con Docker (recomendado si no tenés Python/pip instalado)
+
+```bash
+docker compose up --build
+```
+
+Eso levanta el backend en `http://localhost:8000` (chatbot) y
+`http://localhost:8000/admin.html` (panel administrativo). No hace falta
+instalar Python, pip ni ninguna dependencia en tu máquina — todo corre dentro
+del contenedor.
+
+- Los datos (SQLite + archivos de vigencia) quedan en `./backend/data`,
+  montados como volumen: sobreviven a un rebuild de la imagen.
+- La primera vez, andá al panel admin y hacé clic en "Ingerir" para las
+  vigencias de muestra (o la del PDF real, si la agregaste).
+- Para parar: `docker compose down` (Ctrl+C también sirve si lo corriste en
+  primer plano).
+- Para reconstruir la imagen después de cambiar código: `docker compose up --build`.
+- La variable de entorno `AUTOVALUA_API_KEYS` (con un valor de demostración
+  por defecto en `docker-compose.yml`) es la que autentica la API REST — para
+  producción, cambiala ahí antes de levantar el contenedor.
+
+Si preferís no usar Docker Compose, con Docker solo también funciona:
+```bash
+cd backend
+docker build -t autovalua-ai .
+docker run -p 8000:8000 -v $(pwd)/data:/app/data autovalua-ai
+```
+
+## Cómo correrlo localmente (sin Docker)
 
 ```bash
 cd backend
