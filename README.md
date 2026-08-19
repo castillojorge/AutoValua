@@ -82,7 +82,30 @@ python3 tests_matching.py
 
 ## Datos
 
-Los datos de valuación son una **muestra de 20 vehículos con formato
-equivalente al de la tabla real de la DNRPA** (código MTM/FMM, tipo A/M,
-marca, modelo, carrocería, precios por año), construida para este prototipo
-académico — no son datos oficiales vigentes.
+El sistema soporta dos fuentes de datos:
+
+1. **Datos de muestra** (`vigencia_2024_05.json`, `vigencia_2024_06.json`) — 20
+   vehículos con formato equivalente al real, usados para demostrar el ciclo
+   completo de escalado y aprendizaje con datos controlados.
+2. **PDF real de la DNRPA** (`vigencia_2026_08.pdf`, vigencia 01/08/2026,
+   217 páginas) — el archivo oficial sin modificar. `dnrpa_parser.py` lo
+   parsea a nivel de carácter (no de "palabra" pre-tokenizada), lo cual fue
+   necesario para resolver 3 defectos de layout reales encontrados en el
+   archivo oficial:
+   - Columnas de precio adyacentes pegadas sin espacio entre sí (ej. el valor
+     0km y el del año más reciente, cuando ambos son largos).
+   - Texto de descripción de modelo muy largo que se superpone físicamente
+     con la columna de carrocería en el PDF fuente (no es un error de
+     parseo — el PDF de origen tiene ese defecto).
+   - Códigos de fila que no son 8 dígitos puros (motos con prefijo de letra
+     como "Q4910016", o códigos de 7 dígitos).
+
+   Resultado: **18.180 vehículos ingeridos**, de los cuales ~3% (548 filas,
+   mayormente categorías raras como cuatriciclos o motocross) no pudieron
+   separarse automáticamente en modelo/carrocería y quedan escalados al
+   panel administrativo con el texto sin interpretar — consistente con la
+   regla de diseño original: ante una ambigüedad de formato, el sistema no
+   adivina, la deriva a un humano.
+
+   Test dedicado: `python3 tests_dnrpa_parser.py data/vigencia_2026_08.pdf`
+   (valida 4 filas conocidas contra los valores reales del PDF).
