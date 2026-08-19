@@ -9,9 +9,17 @@ DB_PATH = os.path.join(os.path.dirname(__file__), "data", "autovalua.db")
 
 
 def get_conn():
-    conn = sqlite3.connect(DB_PATH)
+    conn = sqlite3.connect(DB_PATH, timeout=30)
     conn.row_factory = sqlite3.Row
     conn.execute("PRAGMA foreign_keys = ON")
+    # WAL: los lectores (ej. consultas del chat) ya no bloquean ni son
+    # bloqueados por un escritor de larga duración (ej. la ingesta del PDF de
+    # 217 páginas, que mantiene una transacción abierta varios minutos).
+    # busy_timeout: si igual hay una colisión de escritura simultánea,
+    # reintenta hasta 15s en vez de fallar al instante con "database is locked"
+    # (esto es lo que rompía /chat/consulta mientras corría una ingesta).
+    conn.execute("PRAGMA journal_mode = WAL")
+    conn.execute("PRAGMA busy_timeout = 30000")
     return conn
 
 
