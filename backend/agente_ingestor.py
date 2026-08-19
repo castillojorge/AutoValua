@@ -22,7 +22,12 @@ import json
 import os
 import gc
 from db import get_conn
-import dnrpa_parser
+# dnrpa_parser (y pdfplumber, que trae Pillow/cryptography) se importa recién
+# dentro de _ingerir_pdf(), no acá arriba. En un plan free de 512MB de RAM
+# (Render) cargar pdfplumber en cada arranque del proceso, aunque nunca se
+# use el flujo de PDF, es memoria desperdiciada que puede empujar al
+# contenedor a reiniciarse. Con import diferido, el chatbot y la ingesta de
+# JSON de muestra corren sin pagar ese costo.
 
 
 class LayoutError(Exception):
@@ -80,6 +85,7 @@ def _ingerir_json(path_archivo: str) -> dict:
 
 
 def _ingerir_pdf(path_archivo: str, vigencia_param: str = None) -> dict:
+    import dnrpa_parser  # import diferido — ver comentario junto a los imports de arriba
     conn = get_conn()
     cur = conn.cursor()
 
@@ -105,7 +111,18 @@ def _ingerir_pdf(path_archivo: str, vigencia_param: str = None) -> dict:
         ).fetchone()
 
         for i, page in enumerate(pdf.pages):
+            # 1) Parseo (lento, CPU-bound): SIN transacción de escritura abierta,
+            #    para que otras requests (ej. una consulta del chat) puedan
+            #    escribir su propio log mientras tanto sin chocar.
             rows = dnrpa_parser.parse_page(page)
+            page.flush_cache()
+            pdf.pages[i] = None  # liberar referencia al árbol de layout de la página
+            del page
+
+            # 2) Inserción (rápida, milisegundos): acá sí se abre la
+            #    transacción, y se cierra enseguida con commit — la ventana
+            #    en la que la base queda bloqueada para otros escritores es
+            #    mínima, en vez de abarcar 20 páginas de parseo lento.
             for v in rows:
                 _insertar_vehiculo(cur, vigencia, v)
                 total += 1
@@ -119,11 +136,9 @@ def _ingerir_pdf(path_archivo: str, vigencia_param: str = None) -> dict:
                         "texto_sin_interpretar": v["modelo"],
                         "motivo": "No se encontró una carrocería conocida para separar modelo/carrocería.",
                     }, ensure_ascii=False),))
-            page.flush_cache()
-            pdf.pages[i] = None  # liberar referencia al árbol de layout de la página
-            del page, rows
+            conn.commit()
+            del rows
             if (i + 1) % 20 == 0:
-                conn.commit()  # commits periódicos: si falla a mitad de camino, no se pierde todo
                 gc.collect()
 
     cur.execute("""
